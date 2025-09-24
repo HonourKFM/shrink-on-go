@@ -929,8 +929,16 @@
             const ctx = document.getElementById('concernChart').getContext('2d');
             if (concernChartInstance) concernChartInstance.destroy();
             const concernCounts = clientData.reduce((acc, c) => {
-                const mainCategory = (c.concern || '').split(' - ')[0];
-                if (mainCategory) acc[mainCategory] = (acc[mainCategory] || 0) + 1;
+                let mainCategory = (c.concern || 'Other').split(' - ')[0];
+                
+                // FIX: Normalize old 'Depression' data to 'Depression & Mood' for consistent graphing
+                if (mainCategory === 'Depression') {
+                    mainCategory = 'Depression & Mood';
+                }
+                
+                if (mainCategory) {
+                    acc[mainCategory] = (acc[mainCategory] || 0) + 1;
+                }
                 return acc;
             }, {});
             const sortedConcerns = Object.entries(concernCounts).sort((a, b) => b[1] - a[1]);
