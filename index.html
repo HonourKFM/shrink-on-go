@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shrink on the Go - Fynex Family Support Services</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -472,6 +472,144 @@
                 </div>
                 
                 <form id="clientForm">
+                    <!-- Primary Concern FIRST -->
+                    <div class="form-group">
+                        <label class="form-label">Primary Concern Category * <span style="color: var(--burgundy); font-size: 12px;">(Most Important)</span></label>
+                        <select class="form-select" id="concern" required style="border-color: var(--burgundy); border-width: 2px;">
+                            <option value="">Select Primary Concern</option>
+                            <optgroup label="Anxiety & Fear">
+                                <option value="Anxiety - General worry">General worry and nervousness</option>
+                                <option value="Anxiety - Social situations">Fear of social situations</option>
+                                <option value="Anxiety - Panic attacks">Panic attacks and intense fear</option>
+                                <option value="Anxiety - Health worry">Health anxiety/hypochondria</option>
+                                <option value="Anxiety - Performance">Performance/test anxiety</option>
+                                <option value="Anxiety - Driving">Driving anxiety</option>
+                                <option value="Phobias - Specific fears">Specific phobias (heights, animals, etc)</option>
+                                <option value="OCD - Intrusive thoughts">Obsessive thoughts and compulsions</option>
+                            </optgroup>
+                            <optgroup label="Depression & Mood">
+                                <option value="Depression - Feeling sad">Persistent sadness</option>
+                                <option value="Depression - No motivation">Lack of motivation/energy</option>
+                                <option value="Depression - Hopelessness">Feeling hopeless about future</option>
+                                <option value="Depression - Isolation">Withdrawing from others</option>
+                                <option value="Depression - Can't enjoy things">Loss of interest in activities</option>
+                                <option value="Depression - Suicidal thoughts">Thoughts of self-harm</option>
+                                <option value="Mood swings">Rapid mood changes</option>
+                                <option value="Bipolar symptoms">Extreme highs and lows</option>
+                            </optgroup>
+                            <optgroup label="Relationship Problems">
+                                <option value="Marriage - Communication">Can't communicate with spouse</option>
+                                <option value="Marriage - Infidelity">Dealing with affair/cheating</option>
+                                <option value="Marriage - Considering divorce">Thinking about divorce</option>
+                                <option value="Marriage - Intimacy issues">Physical/emotional intimacy problems</option>
+                                <option value="Dating - Finding partner">Difficulty finding partner</option>
+                                <option value="Dating - Toxic relationship">In unhealthy relationship</option>
+                                <option value="Dating - Breakup">Going through breakup</option>
+                                <option value="Family - Parent conflict">Problems with parents</option>
+                                <option value="Family - Sibling issues">Sibling conflicts</option>
+                                <option value="Family - In-law problems">In-law difficulties</option>
+                            </optgroup>
+                            <optgroup label="Parenting & Children">
+                                <option value="Parenting - Child behavior">Child behavioral problems</option>
+                                <option value="Parenting - Teen issues">Teenager challenges</option>
+                                <option value="Parenting - School problems">Child's academic issues</option>
+                                <option value="Parenting - Special needs">Special needs child stress</option>
+                                <option value="Parenting - Discipline">Don't know how to discipline</option>
+                                <option value="Parenting - Single parent">Single parent struggles</option>
+                                <option value="Parenting - Co-parenting">Co-parenting with ex</option>
+                                <option value="Parenting - New baby">New parent overwhelm</option>
+                            </optgroup>
+                            <optgroup label="Work & Career">
+                                <option value="Work - Boss problems">Difficult boss/supervisor</option>
+                                <option value="Work - Coworker conflict">Problems with colleagues</option>
+                                <option value="Work - Job stress">Overwhelming workload</option>
+                                <option value="Work - Job loss">Recently lost job</option>
+                                <option value="Work - Career change">Want to change careers</option>
+                                <option value="Work - No promotion">Stuck in current position</option>
+                                <option value="Work - Burnout">Complete exhaustion from work</option>
+                                <option value="Work - Harassment">Workplace harassment/bullying</option>
+                                <option value="Business - Financial stress">Business financial problems</option>
+                                <option value="Business - Failed business">Business failure</option>
+                            </optgroup>
+                            <optgroup label="Money Problems">
+                                <option value="Money - Debt">Overwhelming debt</option>
+                                <option value="Money - Can't pay bills">Unable to pay bills</option>
+                                <option value="Money - No savings">No emergency savings</option>
+                                <option value="Money - Supporting family">Pressure supporting extended family</option>
+                                <option value="Money - Unemployment">No income/job</option>
+                                <option value="Money - Medical bills">Medical expense stress</option>
+                                <option value="Money - School fees">Can't afford school fees</option>
+                                <option value="Money - Retirement worry">No retirement plan</option>
+                            </optgroup>
+                            <optgroup label="Addiction & Habits">
+                                <option value="Alcohol - Drinking too much">Drinking problem</option>
+                                <option value="Alcohol - Can't stop">Want to quit drinking</option>
+                                <option value="Drugs - Marijuana">Marijuana use issues</option>
+                                <option value="Drugs - Other substances">Other drug use</option>
+                                <option value="Gambling - Betting">Sports betting problem</option>
+                                <option value="Gambling - Casino">Casino gambling issues</option>
+                                <option value="Sex/Porn addiction">Sex or pornography addiction</option>
+                                <option value="Gaming - Video games">Video game addiction</option>
+                                <option value="Phone/Social media">Phone/social media addiction</option>
+                                <option value="Shopping - Overspending">Compulsive shopping</option>
+                                <option value="Smoking - Want to quit">Want to stop smoking</option>
+                            </optgroup>
+                            <optgroup label="Trauma & Abuse">
+                                <option value="Trauma - Childhood abuse">Childhood abuse survivor</option>
+                                <option value="Trauma - Sexual assault">Sexual assault survivor</option>
+                                <option value="Trauma - Domestic violence">Domestic violence survivor</option>
+                                <option value="Trauma - Accident">Traumatic accident</option>
+                                <option value="Trauma - Crime victim">Victim of crime</option>
+                                <option value="Trauma - War/conflict">War or conflict trauma</option>
+                                <option value="PTSD symptoms">PTSD/flashbacks</option>
+                                <option value="Current abuse">Currently being abused</option>
+                            </optgroup>
+                            <optgroup label="Grief & Loss">
+                                <option value="Grief - Death of spouse">Lost husband/wife</option>
+                                <option value="Grief - Death of child">Lost a child</option>
+                                <option value="Grief - Death of parent">Lost mother/father</option>
+                                <option value="Grief - Suicide loss">Lost someone to suicide</option>
+                                <option value="Grief - Miscarriage">Miscarriage/pregnancy loss</option>
+                                <option value="Grief - Pet loss">Lost beloved pet</option>
+                                <option value="Loss - Divorce">Grieving divorce</option>
+                                <option value="Loss - Job">Grieving job loss</option>
+                            </optgroup>
+                            <optgroup label="Health Issues">
+                                <option value="Health - Chronic pain">Living with chronic pain</option>
+                                <option value="Health - Terminal illness">Terminal diagnosis</option>
+                                <option value="Health - HIV/AIDS">HIV/AIDS related stress</option>
+                                <option value="Health - Diabetes">Diabetes management stress</option>
+                                <option value="Health - Cancer">Cancer diagnosis/treatment</option>
+                                <option value="Health - Disability">New disability adjustment</option>
+                                <option value="Sleep - Insomnia">Can't sleep</option>
+                                <option value="Sleep - Nightmares">Recurring nightmares</option>
+                                <option value="Eating - Overeating">Emotional eating</option>
+                                <option value="Eating - Not eating">Loss of appetite</option>
+                            </optgroup>
+                            <optgroup label="Identity & Self">
+                                <option value="Self - Low self-esteem">Low self-worth</option>
+                                <option value="Self - Identity confusion">Don't know who I am</option>
+                                <option value="Self - Body image">Hate my body</option>
+                                <option value="Self - No confidence">No confidence</option>
+                                <option value="Sexual - Orientation">Sexual orientation questions</option>
+                                <option value="Sexual - Gender identity">Gender identity questions</option>
+                                <option value="Cultural - Between cultures">Cultural identity conflict</option>
+                                <option value="Age - Midlife crisis">Midlife crisis</option>
+                                <option value="Age - Aging fears">Fear of getting old</option>
+                            </optgroup>
+                            <optgroup label="Student/Youth Issues">
+                                <option value="School - Academic pressure">Failing grades/exams</option>
+                                <option value="School - Bullying">Being bullied</option>
+                                <option value="School - Peer pressure">Peer pressure</option>
+                                <option value="School - University stress">University overwhelming</option>
+                                <option value="Youth - Pregnant teen">Teen pregnancy</option>
+                                <option value="Youth - Parent conflict">Fighting with parents</option>
+                                <option value="Youth - Future fears">Scared about future</option>
+                            </optgroup>
+                            <option value="Other - Not Listed">Other - Will explain to counselor</option>
+                        </select>
+                    </div>
+
                     <!-- Basic Information -->
                     <div class="form-row">
                         <div class="form-group">
@@ -565,17 +703,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Primary Concern Category</label>
-                            <select class="form-select" id="concern">
-                                <option value="">Select Category</option>
-                                <option value="Anxiety">Anxiety</option>
-                                <option value="Depression">Depression</option>
-                                <option value="Relationship">Relationship</option>
-                                <option value="Work Stress">Work Stress</option>
-                                <option value="Family Issues">Family Issues</option>
-                                <option value="Financial Stress">Financial Stress</option>
-                                <option value="Health Concerns">Health Concerns</option>
-                                <option value="Other">Other</option>
+                            <label class="form-label">Severity Level</label>
+                            <select class="form-select" id="severity">
+                                <option value="">Select Severity</option>
+                                <option value="Mild - Functioning well">Mild - Functioning well</option>
+                                <option value="Moderate - Some impact">Moderate - Some impact</option>
+                                <option value="Severe - Significant impact">Severe - Significant impact</option>
+                                <option value="Crisis - Immediate support needed">Crisis - Immediate support needed</option>
                             </select>
                         </div>
                     </div>
@@ -614,12 +748,26 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Most Common Area</div>
-                    <div class="stat-value" id="dashTopArea" style="font-size: 20px;">-</div>
+                    <div class="stat-value" id="dashTopArea" style="font-size: 20px;">No data yet</div>
                     <div class="stat-change">Location</div>
                 </div>
             </div>
 
+            <!-- Empty State Message -->
+            <div id="emptyDashboard" class="form-card" style="text-align: center; padding: 60px 20px; display: none;">
+                <h3 style="color: var(--burgundy); margin-bottom: 10px;">No Data Yet</h3>
+                <p style="color: var(--grey);">Start collecting data in the Driver Portal to see analytics here.</p>
+                <button class="btn btn-primary" onclick="showPage('driver')">
+                    Go to Driver Portal
+                </button>
+            </div>
+
             <!-- Charts -->
+            <div class="chart-container">
+                <h3 class="chart-title">Primary Concerns Distribution</h3>
+                <canvas id="concernChart" height="100"></canvas>
+            </div>
+
             <div class="chart-container">
                 <h3 class="chart-title">Demographics Overview</h3>
                 <canvas id="genderChart" height="100"></canvas>
@@ -652,6 +800,7 @@
                                 <th>Age</th>
                                 <th>Employment</th>
                                 <th>Marital Status</th>
+                                <th>Primary Concern</th>
                             </tr>
                         </thead>
                         <tbody id="dataTableBody">
@@ -675,9 +824,18 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Hide charts initially
+            const chartContainers = document.querySelectorAll('.chart-container');
+            chartContainers.forEach(container => {
+                container.style.display = 'none';
+            });
+            
             updateDriverStats();
             updateEntryList();
-            updateDashboard();
+            // Don't update dashboard on initial load unless on that page
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                updateDashboard();
+            }
         });
 
         // Page Navigation
@@ -686,7 +844,14 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById(page).classList.add('active');
-            event.target.classList.add('active');
+            
+            // Fix nav button activation
+            const navButtons = document.querySelectorAll('.nav-btn');
+            if (page === 'driver') {
+                navButtons[0].classList.add('active');
+            } else {
+                navButtons[1].classList.add('active');
+            }
             
             if (page === 'dashboard') {
                 updateDashboard();
@@ -714,9 +879,10 @@
                 age: parseInt(document.getElementById('age').value),
                 employment: document.getElementById('employment').value,
                 marital: document.getElementById('marital').value,
+                concern: document.getElementById('concern').value,
                 education: document.getElementById('education').value || null,
                 household: document.getElementById('household').value ? parseInt(document.getElementById('household').value) : null,
-                concern: document.getElementById('concern').value || null
+                severity: document.getElementById('severity').value || null
             };
             
             // Save data
@@ -727,6 +893,25 @@
             entryHistory.push({
                 timestamp: formData.timestamp,
                 id: formData.id
+            // Area Distribution
+            const areaCounts = {};
+            clientData.forEach(c => {
+                areaCounts[c.area] = (areaCounts[c.area] || 0) + 1;
+            });
+            
+            // Check if we need a new page
+            if (yPos > 240) {
+                doc.addPage();
+                yPos = 20;
+            } else {
+                yPos += 15;
+            }
+            
+            doc.text('Area Distribution:', 20, yPos);
+            Object.entries(areaCounts).sort((a, b) => b[1] - a[1]).forEach(([area, count]) => {
+                yPos += 7;
+                const percentage = ((count / clientData.length) * 100).toFixed(1);
+                doc.text(`  ${area}: ${count} (${percentage}%)`, 20, yPos);
             });
             localStorage.setItem('entryHistory', JSON.stringify(entryHistory));
             
@@ -804,9 +989,38 @@
             }).join('');
         }
 
+        // Store chart instances globally to prevent duplicates
+        let concernChartInstance = null;
+        let genderChartInstance = null;
+        let areaChartInstance = null;
+
         // Update Dashboard
         function updateDashboard() {
-            if (clientData.length === 0) return;
+            const emptyMessage = document.getElementById('emptyDashboard');
+            
+            if (clientData.length === 0) {
+                // Show empty state
+                document.getElementById('dashTotalClients').textContent = '0';
+                document.getElementById('dashAvgAge').textContent = '0';
+                document.getElementById('dashTopArea').textContent = 'No data yet';
+                
+                // Show empty message, hide charts
+                if (emptyMessage) emptyMessage.style.display = 'block';
+                const chartContainers = document.querySelectorAll('.chart-container');
+                chartContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+                
+                updateDataTable();
+                return;
+            }
+            
+            // Hide empty message, show charts
+            if (emptyMessage) emptyMessage.style.display = 'none';
+            const chartContainers = document.querySelectorAll('.chart-container');
+            chartContainers.forEach(container => {
+                container.style.display = 'block';
+            });
             
             // Calculate stats
             const avgAge = Math.round(clientData.reduce((sum, c) => sum + c.age, 0) / clientData.length);
@@ -820,21 +1034,95 @@
             document.getElementById('dashAvgAge').textContent = avgAge;
             document.getElementById('dashTopArea').textContent = topArea;
             
-            // Update charts
-            updateGenderChart();
-            updateAreaChart();
+            // Update charts with delay to ensure DOM is ready
+            setTimeout(() => {
+                updateConcernChart();
+                updateGenderChart();
+                updateAreaChart();
+            }, 100);
+            
             updateDataTable();
+        }
+
+        // Update Concern Chart
+        function updateConcernChart() {
+            const ctx = document.getElementById('concernChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (concernChartInstance) {
+                concernChartInstance.destroy();
+            }
+            
+            const concernCounts = {};
+            clientData.forEach(c => {
+                if (c.concern) {
+                    // Group by main category (before the dash)
+                    const mainCategory = c.concern.split(' - ')[0];
+                    concernCounts[mainCategory] = (concernCounts[mainCategory] || 0) + 1;
+                }
+            });
+            
+            // Only create chart if there's data
+            if (Object.keys(concernCounts).length === 0) {
+                return;
+            }
+            
+            // Sort by frequency
+            const sortedConcerns = Object.entries(concernCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            concernChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedConcerns.map(c => c[0]),
+                    datasets: [{
+                        label: 'Number of Clients',
+                        data: sortedConcerns.map(c => c[1]),
+                        backgroundColor: '#8B2635',
+                        borderColor: '#6B1F29',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
 
         // Update Gender Chart
         function updateGenderChart() {
             const ctx = document.getElementById('genderChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (genderChartInstance) {
+                genderChartInstance.destroy();
+            }
+            
             const genderCounts = {};
             clientData.forEach(c => {
                 genderCounts[c.gender] = (genderCounts[c.gender] || 0) + 1;
             });
             
-            new Chart(ctx, {
+            // Only create chart if there's data
+            if (Object.keys(genderCounts).length === 0) {
+                return;
+            }
+            
+            genderChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(genderCounts),
@@ -863,12 +1151,23 @@
         // Update Area Chart
         function updateAreaChart() {
             const ctx = document.getElementById('areaChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (areaChartInstance) {
+                areaChartInstance.destroy();
+            }
+            
             const areaCounts = {};
             clientData.forEach(c => {
                 areaCounts[c.area] = (areaCounts[c.area] || 0) + 1;
             });
             
-            new Chart(ctx, {
+            // Only create chart if there's data
+            if (Object.keys(areaCounts).length === 0) {
+                return;
+            }
+            
+            areaChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(areaCounts),
@@ -903,7 +1202,7 @@
             const tbody = document.getElementById('dataTableBody');
             
             if (clientData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No data available</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No data available</td></tr>';
                 return;
             }
             
@@ -924,6 +1223,7 @@
                         <td>${client.age}</td>
                         <td>${client.employment}</td>
                         <td>${client.marital}</td>
+                        <td>${client.concern || '-'}</td>
                     </tr>
                 `;
             }).join('');
@@ -968,13 +1268,51 @@
                 doc.text(`  ${gender}: ${count} (${percentage}%)`, 20, yPos);
             });
             
+            // Employment Distribution
+            const employmentCounts = {};
+            clientData.forEach(c => {
+                employmentCounts[c.employment] = (employmentCounts[c.employment] || 0) + 1;
+            });
+            
+            yPos += 15;
+            doc.text('Employment Status:', 20, yPos);
+            Object.entries(employmentCounts).forEach(([status, count]) => {
+                yPos += 7;
+                const percentage = ((count / clientData.length) * 100).toFixed(1);
+                doc.text(`  ${status}: ${count} (${percentage}%)`, 20, yPos);
+            });
+            
+            // Primary Concerns
+            const concernCounts = {};
+            clientData.forEach(c => {
+                if (c.concern) {
+                    const mainCategory = c.concern.split(' - ')[0];
+                    concernCounts[mainCategory] = (concernCounts[mainCategory] || 0) + 1;
+                }
+            });
+            
+            yPos += 15;
+            doc.text('Primary Concerns:', 20, yPos);
+            Object.entries(concernCounts).sort((a, b) => b[1] - a[1]).forEach(([concern, count]) => {
+                yPos += 7;
+                const percentage = ((count / clientData.length) * 100).toFixed(1);
+                doc.text(`  ${concern}: ${count} (${percentage}%)`, 20, yPos);
+            });
+            
             // Area Distribution
             const areaCounts = {};
             clientData.forEach(c => {
                 areaCounts[c.area] = (areaCounts[c.area] || 0) + 1;
             });
             
-            yPos += 15;
+            // Check if we need a new page
+            if (yPos > 240) {
+                doc.addPage();
+                yPos = 20;
+            } else {
+                yPos += 15;
+            }
+            
             doc.text('Area Distribution:', 20, yPos);
             Object.entries(areaCounts).sort((a, b) => b[1] - a[1]).forEach(([area, count]) => {
                 yPos += 7;
@@ -1026,6 +1364,7 @@
             const genders = ['Male', 'Female', 'Other'];
             const employmentStatuses = ['Employed Full-time', 'Employed Part-time', 'Self-employed', 'Unemployed'];
             const maritalStatuses = ['Single', 'Married', 'Divorced', 'Widowed'];
+            const concerns = ['Anxiety - General', 'Depression - Mild', 'Work Stress', 'Marital Conflict', 'Financial Stress', 'Sleep Issues'];
             
             for (let i = 0; i < 10; i++) {
                 const demoEntry = {
@@ -1035,7 +1374,8 @@
                     gender: genders[Math.floor(Math.random() * genders.length)],
                     age: Math.floor(Math.random() * 40) + 20,
                     employment: employmentStatuses[Math.floor(Math.random() * employmentStatuses.length)],
-                    marital: maritalStatuses[Math.floor(Math.random() * maritalStatuses.length)]
+                    marital: maritalStatuses[Math.floor(Math.random() * maritalStatuses.length)],
+                    concern: concerns[Math.floor(Math.random() * concerns.length)]
                 };
                 clientData.push(demoEntry);
                 entryHistory.push({
@@ -1048,11 +1388,8 @@
             localStorage.setItem('entryHistory', JSON.stringify(entryHistory));
         }
 
-        // Uncomment to generate demo data on first load
-        // if (clientData.length === 0) {
-        //     generateDemoData();
-        //     location.reload();
-        // }
+        // Uncomment the line below to generate demo data on first load
+        // if (clientData.length === 0) generateDemoData();
     </script>
 </body>
 </html>
