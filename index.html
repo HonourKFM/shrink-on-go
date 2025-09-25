@@ -774,7 +774,7 @@
     </div>
 
     <script>
-        const APP_VERSION = '1.7.2-restore-options';
+        const APP_VERSION = '1.7.3-robust-init';
         console.log('Shrink on the Go - Version', APP_VERSION);
 
         const { createClient } = supabase;
@@ -784,7 +784,10 @@
         let db; 
         if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_KEY === 'YOUR_SUPABASE_KEY' || !SUPABASE_URL || !SUPABASE_KEY) {
             console.error('Supabase credentials are not set.');
-            document.addEventListener('DOMContentLoaded', () => document.getElementById('credentialsErrorOverlay').style.display = 'flex');
+            document.addEventListener('DOMContentLoaded', () => {
+                const el = document.getElementById('credentialsErrorOverlay');
+                if(el) el.style.display = 'flex';
+            });
         } else {
             db = createClient(SUPABASE_URL, SUPABASE_KEY);
             console.log('Supabase client initialized.');
@@ -798,13 +801,15 @@
             const riskSection = document.getElementById('suicideRiskSection');
             const riskSelect = document.getElementById('suicideStage');
 
-            if (concernSelect.value.endsWith(' - Suicidal thoughts')) {
-                riskSection.style.display = 'block';
-                riskSelect.required = true;
-            } else {
-                riskSection.style.display = 'none';
-                riskSelect.required = false;
-                riskSelect.value = '';
+            if (concernSelect && riskSection && riskSelect) {
+                if (concernSelect.value.endsWith(' - Suicidal thoughts')) {
+                    riskSection.style.display = 'block';
+                    riskSelect.required = true;
+                } else {
+                    riskSection.style.display = 'none';
+                    riskSelect.required = false;
+                    riskSelect.value = '';
+                }
             }
         }
 
@@ -815,9 +820,9 @@
                 updateSyncStatus();
                 syncOfflineQueue(); 
             }
-            document.getElementById('driverSetupForm').addEventListener('submit', saveDriverDetails);
-            document.getElementById('changeDriverBtn').addEventListener('click', changeDriver);
-            document.getElementById('concern').addEventListener('change', toggleSuicideRiskSection);
+            document.getElementById('driverSetupForm')?.addEventListener('submit', saveDriverDetails);
+            document.getElementById('changeDriverBtn')?.addEventListener('click', changeDriver);
+            document.getElementById('concern')?.addEventListener('change', toggleSuicideRiskSection);
             
             window.addEventListener('online', () => {
                 updateSyncStatus();
@@ -829,8 +834,9 @@
         function updateSyncStatus() {
             const statusEl = document.getElementById('syncStatus');
             const textEl = document.getElementById('syncText');
+            if (!statusEl || !textEl) return;
+            
             const offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-
             statusEl.classList.remove('online', 'offline', 'syncing');
 
             if (navigator.onLine) {
@@ -885,17 +891,24 @@
         function loadDriverDetails() {
             driverDetails = JSON.parse(localStorage.getItem('driverDetails') || 'null');
         }
-
+        
+        // FIXED: Added safety checks to prevent crash on page load
         async function initializeDriverSetup() {
             const setupOverlay = document.getElementById('driverSetupOverlay');
             const mainApp = document.getElementById('mainAppContainer');
             const driverInfoDisplay = document.getElementById('driverInfo');
+            const driverNameEl = document.getElementById('driverNameDisplay');
+
+            if (!setupOverlay || !mainApp || !driverInfoDisplay || !driverNameEl) {
+                console.error("A critical UI element could not be found. App initialization has been halted.");
+                return;
+            }
 
             if (driverDetails && driverDetails.name) {
                 setupOverlay.style.display = 'none';
                 mainApp.style.visibility = 'visible';
-                driverInfoDisplay.style.display = 'flex';
-                document.getElementById('driverNameDisplay').textContent = driverDetails.name;
+                driverInfoDisplay.style.display = 'block'; // Use 'block' for better consistency
+                driverNameEl.textContent = driverDetails.name;
                 await loadAndDisplayData();
             } else {
                 setupOverlay.style.display = 'flex';
@@ -924,14 +937,17 @@
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.getElementById(`${pageId}Btn`).classList.add('active');
+            const pageEl = document.getElementById(pageId);
+            const btnEl = document.getElementById(`${pageId}Btn`);
+            if (pageEl) pageEl.classList.add('active');
+            if (btnEl) btnEl.classList.add('active');
+            
             if (pageId === 'dashboard') {
                 updateDashboard();
             }
         }
 
-        document.getElementById('clientForm').addEventListener('submit', async function(e) {
+        document.getElementById('clientForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = {
@@ -962,8 +978,10 @@
 
         function showSuccess() {
             const msg = document.getElementById('successMessage');
-            msg.style.display = 'block';
-            setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            if(msg) {
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            }
         }
 
         async function loadAndDisplayData() {
@@ -982,13 +1000,18 @@
         }
 
         function updateDriverStats() {
-            document.getElementById('totalCount').textContent = clientData.length;
+            const totalCountEl = document.getElementById('totalCount');
+            const todayCountEl = document.getElementById('todayCount');
+            const weekCountEl = document.getElementById('weekCount');
+            if (!totalCountEl || !todayCountEl || !weekCountEl) return;
+
+            totalCountEl.textContent = clientData.length;
             const now = new Date();
             const todayEntries = clientData.filter(e => new Date(e.timestamp).toDateString() === now.toDateString()).length;
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             const weekEntries = clientData.filter(e => new Date(e.timestamp) >= weekAgo).length;
-            document.getElementById('todayCount').textContent = todayEntries;
-            document.getElementById('weekCount').textContent = weekEntries;
+            todayCountEl.textContent = todayEntries;
+            weekCountEl.textContent = weekEntries;
         }
 
         let concernChartInstance = null;
@@ -996,10 +1019,15 @@
 
         function updateDashboard() {
             updateSuicideWatchList();
+            const totalClientsEl = document.getElementById('dashTotalClients');
+            const avgAgeEl = document.getElementById('dashAvgAge');
+            const topAreaEl = document.getElementById('dashTopArea');
+            if (!totalClientsEl || !avgAgeEl || !topAreaEl) return;
+
             if (clientData.length === 0) {
-                document.getElementById('dashTotalClients').textContent = '0';
-                document.getElementById('dashAvgAge').textContent = '0';
-                document.getElementById('dashTopArea').textContent = 'No data';
+                totalClientsEl.textContent = '0';
+                avgAgeEl.textContent = '0';
+                topAreaEl.textContent = 'No data';
                 if(concernChartInstance) concernChartInstance.destroy();
                 if(areaChartInstance) areaChartInstance.destroy();
                 updateDataTable();
@@ -1014,9 +1042,9 @@
             }, {});
             const topArea = Object.keys(areaCounts).length > 0 ? Object.entries(areaCounts).sort((a,b) => b[1]-a[1])[0][0] : 'N/A';
             
-            document.getElementById('dashTotalClients').textContent = clientData.length;
-            document.getElementById('dashAvgAge').textContent = avgAge;
-            document.getElementById('dashTopArea').textContent = topArea;
+            totalClientsEl.textContent = clientData.length;
+            avgAgeEl.textContent = avgAge;
+            topAreaEl.textContent = topArea;
             
             updateConcernChart();
             updateAreaChart();
@@ -1024,9 +1052,11 @@
         }
         
         function updateSuicideWatchList() {
-            const watchList = clientData.filter(c => c.suicideStage);
             const section = document.getElementById('suicideWatchSection');
             const tbody = document.getElementById('suicideWatchTableBody');
+            if (!section || !tbody) return;
+
+            const watchList = clientData.filter(c => c.suicideStage);
             if (watchList.length === 0) {
                 section.style.display = 'none';
                 return;
@@ -1046,7 +1076,8 @@
         }
 
         function updateConcernChart() {
-            const ctx = document.getElementById('concernChart').getContext('2d');
+            const ctx = document.getElementById('concernChart')?.getContext('2d');
+            if (!ctx) return;
             if (concernChartInstance) concernChartInstance.destroy();
             const concernCounts = clientData.reduce((acc, c) => {
                 let mainCategory = (c.concern || 'Other').split(' - ')[0];
@@ -1063,7 +1094,8 @@
         }
         
         function updateAreaChart() {
-            const ctx = document.getElementById('areaChart').getContext('2d');
+            const ctx = document.getElementById('areaChart')?.getContext('2d');
+            if (!ctx) return;
             if (areaChartInstance) areaChartInstance.destroy();
             const areaCounts = clientData.reduce((acc, c) => { acc[c.area] = (acc[c.area] || 0) + 1; return acc; }, {});
             areaChartInstance = new Chart(ctx, {
@@ -1075,6 +1107,7 @@
 
         function updateDataTable() {
             const tbody = document.getElementById('dataTableBody');
+            if (!tbody) return;
             if (clientData.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="11" style="text-align: center;">No data available</td></tr>`;
                 return;
