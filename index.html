@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shrink on the Go - Fynex Family Support Services</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -157,6 +158,42 @@
             background: var(--burgundy);
             color: var(--white);
         }
+        
+        .sync-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sync-status.online {
+            background-color: #e6f7ec;
+            color: #247f43;
+        }
+        .sync-status.offline {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        .sync-status.syncing {
+             background-color: #fffbeb;
+            color: #d39e00;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+        }
+        .syncing .status-dot {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
 
         .page {
             display: none;
@@ -354,6 +391,15 @@
 </head>
 <body>
 
+    <div id="credentialsErrorOverlay" class="setup-overlay" style="display: none;">
+        <div class="form-card" style="border-left: 5px solid var(--burgundy);">
+            <div class="form-header">
+                <h2 class="form-title">Configuration Needed</h2>
+                <p class="form-subtitle">Please add your Supabase URL and Key to the <code>index.html</code> file to connect to the cloud database.</p>
+            </div>
+        </div>
+    </div>
+
     <div id="driverSetupOverlay" class="setup-overlay">
         <div class="form-card">
             <div class="form-header">
@@ -380,9 +426,15 @@
                 </div>
             </div>
             
-            <div id="driverInfo" class="driver-info" style="display: none;">
-                Welcome, <span id="driverNameDisplay" class="driver-name"></span>
-                <button id="changeDriverBtn" class="change-driver-btn">Change</button>
+            <div class="driver-info-container" style="display: flex; align-items: center; gap: 20px;">
+                <div id="driverInfo" class="driver-info" style="display: none;">
+                    Welcome, <span id="driverNameDisplay" class="driver-name"></span>
+                    <button id="changeDriverBtn" class="change-driver-btn">Change</button>
+                </div>
+                <div id="syncStatus" class="sync-status offline">
+                    <div class="status-dot"></div>
+                    <span id="syncText">Connecting...</span>
+                </div>
             </div>
 
             <div class="nav-buttons">
@@ -680,7 +732,6 @@
                 <canvas id="concernChart" height="100"></canvas>
             </div>
 
-            <!-- FIXED: Added Area Distribution chart container back -->
             <div class="chart-container">
                 <h3 class="chart-title">Area Distribution</h3>
                 <canvas id="areaChart" height="100"></canvas>
@@ -723,42 +774,24 @@
     </div>
 
     <script>
-        const APP_VERSION = '1.5.0-restore-area-chart';
+        const APP_VERSION = '1.7.2-restore-options';
         console.log('Shrink on the Go - Version', APP_VERSION);
+
+        const { createClient } = supabase;
+        const SUPABASE_URL = 'https://zaxlbokpfmiwrbnlsren.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGxib2twZm1pd3JibmxzcmVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NDk5OTYsImV4cCI6MjA3NDMyNTk5Nn0.tAIAWol7yW58qSIqdccH6zAALN2kgYcQt-ca6w8IjCs';
+        
+        let db; 
+        if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_KEY === 'YOUR_SUPABASE_KEY' || !SUPABASE_URL || !SUPABASE_KEY) {
+            console.error('Supabase credentials are not set.');
+            document.addEventListener('DOMContentLoaded', () => document.getElementById('credentialsErrorOverlay').style.display = 'flex');
+        } else {
+            db = createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('Supabase client initialized.');
+        }
 
         let clientData = [];
         let driverDetails = null;
-        let entryCounter = 0;
-
-        function loadData() {
-            try {
-                const storedData = localStorage.getItem('clientData');
-                clientData = storedData ? JSON.parse(storedData) : [];
-                
-                const storedDriver = localStorage.getItem('driverDetails');
-                driverDetails = storedDriver ? JSON.parse(storedDriver) : null;
-                
-                entryCounter = parseInt(localStorage.getItem('entryCounter')) || 0;
-            } catch (error) {
-                console.error('Error loading data.', error);
-                clientData = [];
-                driverDetails = null;
-                entryCounter = 0;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            initializeDriverSetup();
-            updateDriverStats();
-            if (document.getElementById('dashboard').classList.contains('active')) {
-                updateDashboard();
-            }
-
-            document.getElementById('driverSetupForm').addEventListener('submit', saveDriverDetails);
-            document.getElementById('changeDriverBtn').addEventListener('click', changeDriver);
-            document.getElementById('concern').addEventListener('change', toggleSuicideRiskSection);
-        });
 
         function toggleSuicideRiskSection() {
             const concernSelect = document.getElementById('concern');
@@ -775,7 +808,85 @@
             }
         }
 
-        function initializeDriverSetup() {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (db) {
+                loadDriverDetails();
+                initializeDriverSetup();
+                updateSyncStatus();
+                syncOfflineQueue(); 
+            }
+            document.getElementById('driverSetupForm').addEventListener('submit', saveDriverDetails);
+            document.getElementById('changeDriverBtn').addEventListener('click', changeDriver);
+            document.getElementById('concern').addEventListener('change', toggleSuicideRiskSection);
+            
+            window.addEventListener('online', () => {
+                updateSyncStatus();
+                syncOfflineQueue();
+            });
+            window.addEventListener('offline', updateSyncStatus);
+        });
+
+        function updateSyncStatus() {
+            const statusEl = document.getElementById('syncStatus');
+            const textEl = document.getElementById('syncText');
+            const offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+
+            statusEl.classList.remove('online', 'offline', 'syncing');
+
+            if (navigator.onLine) {
+                if (offlineQueue.length > 0) {
+                    statusEl.classList.add('syncing');
+                    textEl.textContent = `Syncing ${offlineQueue.length} entries...`;
+                } else {
+                    statusEl.classList.add('online');
+                    textEl.textContent = 'Online & Synced';
+                }
+            } else {
+                statusEl.classList.add('offline');
+                textEl.textContent = `Offline (${offlineQueue.length} pending)`;
+            }
+        }
+
+        async function syncOfflineQueue() {
+            if (!navigator.onLine || !db) return;
+
+            const offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            if (offlineQueue.length === 0) {
+                updateSyncStatus();
+                return;
+            }
+            
+            updateSyncStatus();
+
+            try {
+                const { count, error: countError } = await db.from('client_data').select('*', { count: 'exact', head: true });
+                if(countError) throw countError;
+                
+                const itemsToSync = offlineQueue.map((item, index) => ({
+                    ...item,
+                    client_id: String(count + 1 + index).padStart(4, '0')
+                }));
+
+                const { error } = await db.from('client_data').insert(itemsToSync);
+                if (error) throw error;
+
+                console.log(`Successfully synced ${itemsToSync.length} offline entries.`);
+                localStorage.setItem('offlineQueue', '[]');
+                await loadAndDisplayData();
+            
+            } catch (error) {
+                console.error('Sync failed:', error);
+                alert('An error occurred while syncing offline data. Please check your connection.');
+            } finally {
+                updateSyncStatus();
+            }
+        }
+
+        function loadDriverDetails() {
+            driverDetails = JSON.parse(localStorage.getItem('driverDetails') || 'null');
+        }
+
+        async function initializeDriverSetup() {
             const setupOverlay = document.getElementById('driverSetupOverlay');
             const mainApp = document.getElementById('mainAppContainer');
             const driverInfoDisplay = document.getElementById('driverInfo');
@@ -783,8 +894,9 @@
             if (driverDetails && driverDetails.name) {
                 setupOverlay.style.display = 'none';
                 mainApp.style.visibility = 'visible';
-                driverInfoDisplay.style.display = 'block';
+                driverInfoDisplay.style.display = 'flex';
                 document.getElementById('driverNameDisplay').textContent = driverDetails.name;
+                await loadAndDisplayData();
             } else {
                 setupOverlay.style.display = 'flex';
                 mainApp.style.visibility = 'hidden';
@@ -794,15 +906,16 @@
 
         function saveDriverDetails(e) {
             e.preventDefault();
-            const driverName = document.getElementById('driverNameInput').value;
-            if (driverName.trim() === '') return;
-            driverDetails = { name: driverName };
-            localStorage.setItem('driverDetails', JSON.stringify(driverDetails));
-            initializeDriverSetup();
+            const driverName = document.getElementById('driverNameInput').value.trim();
+            if (driverName) {
+                driverDetails = { name: driverName };
+                localStorage.setItem('driverDetails', JSON.stringify(driverDetails));
+                initializeDriverSetup();
+            }
         }
         
         function changeDriver() {
-            if (confirm('Are you sure? This requires a new setup.')) {
+            if (confirm('Are you sure? This will log you out and require a new setup on this device.')) {
                 localStorage.removeItem('driverDetails');
                 location.reload();
             }
@@ -812,21 +925,16 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            document.getElementById(pageId + 'Btn').classList.add('active');
+            document.getElementById(`${pageId}Btn`).classList.add('active');
             if (pageId === 'dashboard') {
                 updateDashboard();
             }
         }
 
-        document.getElementById('clientForm').addEventListener('submit', function(e) {
+        document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            entryCounter++;
-            const newId = String(entryCounter).padStart(4, '0');
-            localStorage.setItem('entryCounter', entryCounter);
-            
             const formData = {
-                id: newId,
                 driver: driverDetails ? driverDetails.name : 'N/A',
                 timestamp: new Date().toISOString(),
                 area: document.getElementById('area').value,
@@ -838,13 +946,18 @@
                 suicideStage: document.getElementById('suicideStage').value || null
             };
             
-            clientData.push(formData);
-            localStorage.setItem('clientData', JSON.stringify(clientData));
+            const offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            offlineQueue.push(formData);
+            localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+
+            console.log('Saved entry to offline queue.');
             
             showSuccess();
             this.reset();
             toggleSuicideRiskSection();
-            updateDriverStats();
+            updateSyncStatus();
+            
+            syncOfflineQueue();
         });
 
         function showSuccess() {
@@ -853,30 +966,41 @@
             setTimeout(() => { msg.style.display = 'none'; }, 3000);
         }
 
+        async function loadAndDisplayData() {
+            if (!db) return;
+             try {
+                const { data, error } = await db.from('client_data').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                clientData = data;
+                console.log(`Loaded ${clientData.length} records from Supabase.`);
+                updateDriverStats();
+                updateDashboard(); 
+            } catch (error) {
+                console.error('Error loading data from Supabase:', error);
+                alert('Could not load data from the cloud.');
+            }
+        }
+
         function updateDriverStats() {
             document.getElementById('totalCount').textContent = clientData.length;
             const now = new Date();
             const todayEntries = clientData.filter(e => new Date(e.timestamp).toDateString() === now.toDateString()).length;
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             const weekEntries = clientData.filter(e => new Date(e.timestamp) >= weekAgo).length;
-
             document.getElementById('todayCount').textContent = todayEntries;
             document.getElementById('weekCount').textContent = weekEntries;
         }
 
         let concernChartInstance = null;
-        // FIXED: Added instance variable for the area chart
         let areaChartInstance = null;
 
         function updateDashboard() {
             updateSuicideWatchList();
-
             if (clientData.length === 0) {
                 document.getElementById('dashTotalClients').textContent = '0';
                 document.getElementById('dashAvgAge').textContent = '0';
                 document.getElementById('dashTopArea').textContent = 'No data';
                 if(concernChartInstance) concernChartInstance.destroy();
-                // FIXED: Destroy area chart instance if it exists
                 if(areaChartInstance) areaChartInstance.destroy();
                 updateDataTable();
                 return;
@@ -884,7 +1008,6 @@
             
             const totalAge = clientData.reduce((sum, c) => sum + (c.age || 0), 0);
             const avgAge = clientData.length > 0 ? Math.round(totalAge / clientData.length) : 0;
-            
             const areaCounts = clientData.reduce((acc, c) => {
                 acc[c.area] = (acc[c.area] || 0) + 1;
                 return acc;
@@ -896,7 +1019,6 @@
             document.getElementById('dashTopArea').textContent = topArea;
             
             updateConcernChart();
-            // FIXED: Call the function to update the area chart
             updateAreaChart();
             updateDataTable();
         }
@@ -905,18 +1027,16 @@
             const watchList = clientData.filter(c => c.suicideStage);
             const section = document.getElementById('suicideWatchSection');
             const tbody = document.getElementById('suicideWatchTableBody');
-            
             if (watchList.length === 0) {
                 section.style.display = 'none';
                 return;
             }
-
             section.style.display = 'block';
-            tbody.innerHTML = watchList.slice().reverse().map(client => {
+            tbody.innerHTML = watchList.map(client => {
                 const date = new Date(client.timestamp);
                 return `
                     <tr>
-                        <td>${client.id}</td>
+                        <td>${client.client_id}</td>
                         <td>${client.driver}</td>
                         <td>${date.toLocaleDateString()}</td>
                         <td style="font-weight: bold; color: var(--burgundy);">${client.suicideStage}</td>
@@ -930,84 +1050,41 @@
             if (concernChartInstance) concernChartInstance.destroy();
             const concernCounts = clientData.reduce((acc, c) => {
                 let mainCategory = (c.concern || 'Other').split(' - ')[0];
-                
-                // FIX: Normalize old 'Depression' data to 'Depression & Mood' for consistent graphing
-                if (mainCategory === 'Depression') {
-                    mainCategory = 'Depression & Mood';
-                }
-                
-                if (mainCategory) {
-                    acc[mainCategory] = (acc[mainCategory] || 0) + 1;
-                }
+                if (mainCategory === 'Depression') mainCategory = 'Depression & Mood';
+                if (mainCategory) acc[mainCategory] = (acc[mainCategory] || 0) + 1;
                 return acc;
             }, {});
             const sortedConcerns = Object.entries(concernCounts).sort((a, b) => b[1] - a[1]);
             concernChartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: sortedConcerns.map(c => c[0]),
-                    datasets: [{
-                        label: 'Clients',
-                        data: sortedConcerns.map(c => c[1]),
-                        backgroundColor: '#8B2635'
-                    }]
-                },
+                data: { labels: sortedConcerns.map(c => c[0]), datasets: [{ label: 'Clients', data: sortedConcerns.map(c => c[1]), backgroundColor: '#8B2635' }] },
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
         }
         
-        // FIXED: Added function to create and update the Area Distribution chart
         function updateAreaChart() {
             const ctx = document.getElementById('areaChart').getContext('2d');
             if (areaChartInstance) areaChartInstance.destroy();
-            
-            const areaCounts = clientData.reduce((acc, c) => {
-                acc[c.area] = (acc[c.area] || 0) + 1;
-                return acc;
-            }, {});
-
+            const areaCounts = clientData.reduce((acc, c) => { acc[c.area] = (acc[c.area] || 0) + 1; return acc; }, {});
             areaChartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(areaCounts),
-                    datasets: [{
-                        label: 'Number of Clients',
-                        data: Object.values(areaCounts),
-                        backgroundColor: '#6C757D'
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { 
-                                stepSize: 1 
-                            } 
-                        } 
-                    }, 
-                    plugins: { 
-                        legend: { 
-                            display: false 
-                        } 
-                    } 
-                }
+                data: { labels: Object.keys(areaCounts), datasets: [{ label: 'Number of Clients', data: Object.values(areaCounts), backgroundColor: '#6C757D' }] },
+                options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
             });
         }
 
         function updateDataTable() {
             const tbody = document.getElementById('dataTableBody');
-            const displayData = clientData.slice().reverse();
-            if (displayData.length === 0) {
+            if (clientData.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="11" style="text-align: center;">No data available</td></tr>`;
                 return;
             }
-            tbody.innerHTML = displayData.map(client => {
+            tbody.innerHTML = clientData.map(client => {
                 const dateStr = new Date(client.timestamp).toLocaleString();
                 const [concernCategory, specificProblem] = (client.concern || ' - ').split(' - ');
                 return `
                     <tr>
-                        <td>${client.id}</td>
+                        <td>${client.client_id}</td>
                         <td>${client.driver || '-'}</td>
                         <td>${dateStr}</td>
                         <td>${client.area || '-'}</td>
@@ -1025,24 +1102,15 @@
 
         function exportToSheets() {
             if (clientData.length === 0) return alert('No data to export.');
-
-            const headers = [
-                "ID", "Driver", "Date", "Time", "Area", "Gender", "Age", 
-                "Employment", "Marital Status", "Concern Category", "Specific Problem", "Suicide Stage"
-            ];
+            const headers = [ "ID", "Driver", "Date", "Time", "Area", "Gender", "Age", "Employment", "Marital Status", "Concern Category", "Specific Problem", "Suicide Stage" ];
             let csvContent = headers.join(",") + "\r\n";
             clientData.forEach(client => {
                 const timestamp = new Date(client.timestamp);
                 const [concernCategory, specificProblem] = (client.concern || ' - ').split(' - ');
-                const row = [
-                    client.id, client.driver, timestamp.toLocaleDateString(), timestamp.toLocaleTimeString(),
-                    client.area, client.gender, client.age, client.employment, client.marital,
-                    concernCategory, (specificProblem || 'N/A'), (client.suicideStage || 'N/A')
-                ];
+                const row = [ client.client_id, client.driver, timestamp.toLocaleDateString(), timestamp.toLocaleTimeString(), client.area, client.gender, client.age, client.employment, client.marital, concernCategory, (specificProblem || 'N/A'), (client.suicideStage || 'N/A') ];
                 const sanitizedRow = row.map(field => `"${String(field || '').replace(/"/g, '""')}"`);
                 csvContent += sanitizedRow.join(",") + "\r\n";
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
