@@ -847,7 +847,7 @@
     </div>
 
     <script>
-        const APP_VERSION = '2.0.2-init-fix';
+        const APP_VERSION = '2.0.3-signup-fix';
         console.log('Shrink on the Go - Version', APP_VERSION);
 
         // --- CONFIGURATION ---
@@ -858,7 +858,32 @@
         let approvedDrivers = [];
         let driverDetails = null;
         const ui = {};
-
+        
+        // --- CORE APP LOGIC (DEFINED BEFORE USE) ---
+        function toggleSuicideRiskSection() {
+            if (ui.concern.value.endsWith(' - Suicidal thoughts')) {
+                ui.suicideRiskSection.style.display = 'block';
+                ui.suicideStage.required = true;
+            } else {
+                ui.suicideRiskSection.style.display = 'none';
+                ui.suicideStage.required = false;
+                ui.suicideStage.value = '';
+            }
+        }
+        
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const pageEl = document.getElementById(pageId);
+            const btnEl = document.getElementById(`${pageId}Btn`);
+            if (pageEl) pageEl.classList.add('active');
+            if (btnEl) btnEl.classList.add('active');
+            
+            if (pageId === 'dashboard') {
+                updateDashboard();
+            }
+        }
+        
         // --- ROBUST APP INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', main);
 
@@ -917,19 +942,6 @@
 
         function handleOffline() {
             updateSyncStatus();
-        }
-        
-        // --- CORE APP LOGIC ---
-
-        function toggleSuicideRiskSection() {
-            if (ui.concern.value.endsWith(' - Suicidal thoughts')) {
-                ui.suicideRiskSection.style.display = 'block';
-                ui.suicideStage.required = true;
-            } else {
-                ui.suicideRiskSection.style.display = 'none';
-                ui.suicideStage.required = false;
-                ui.suicideStage.value = '';
-            }
         }
         
         // --- LOGIN AND DRIVER MANAGEMENT ---
@@ -991,25 +1003,29 @@
             button.textContent = 'Creating ID...';
 
             try {
+                // FIXED: Using a standard POST request that Apps Script can parse
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', // Apps Script handles this better
+                    },
                     body: JSON.stringify({ action: 'signup', name: name }),
-                    redirect: 'follow'
                 });
-
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for sheet to update
-                await fetchApprovedDrivers();
-                const newDriver = approvedDrivers.find(d => d.name === name);
-
-                if (newDriver) {
-                    alert(`Your new Driver ID is: ${newDriver.id}\n\nPlease use this ID to log in from now on.`);
-                    driverDetails = { name: newDriver.name, id: newDriver.id };
-                    localStorage.setItem('driverDetails', JSON.stringify(driverDetails));
-                    initializeDriverSetup();
-                } else {
-                    throw new Error("Signup failed. Name might already exist.");
+                
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
                 }
+
+                const result = await response.json();
+
+                if (result.result !== 'success') {
+                    throw new Error(result.error || "Unknown signup error");
+                }
+
+                alert(`Your new Driver ID is: ${result.driver_id}\n\nPlease use this ID to log in from now on.`);
+                driverDetails = { name: result.driver_name, id: result.driver_id };
+                localStorage.setItem('driverDetails', JSON.stringify(driverDetails));
+                initializeDriverSetup();
 
             } catch (error) {
                 console.error("Signup failed:", error);
@@ -1246,19 +1262,6 @@
                     </tr>
                 `;
             }).join('');
-        }
-
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            const pageEl = document.getElementById(pageId);
-            const btnEl = document.getElementById(`${pageId}Btn`);
-            if (pageEl) pageEl.classList.add('active');
-            if (btnEl) btnEl.classList.add('active');
-            
-            if (pageId === 'dashboard') {
-                updateDashboard();
-            }
         }
 
         function exportToSheets() {
