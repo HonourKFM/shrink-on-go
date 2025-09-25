@@ -893,18 +893,6 @@
             return true;
         }
 
-        // FIXED: Moved toggleSuicideRiskSection before it's used
-        function toggleSuicideRiskSection() {
-            if (ui.concern.value.endsWith(' - Suicidal thoughts')) {
-                ui.suicideRiskSection.style.display = 'block';
-                ui.suicideStage.required = true;
-            } else {
-                ui.suicideRiskSection.style.display = 'none';
-                ui.suicideStage.required = false;
-                ui.suicideStage.value = '';
-            }
-        }
-
         function attachEventListeners() {
             ui.driverLoginForm.addEventListener('submit', handleLogin);
             ui.driverSignupForm.addEventListener('submit', handleSignup);
@@ -929,6 +917,19 @@
 
         function handleOffline() {
             updateSyncStatus();
+        }
+        
+        // --- CORE APP LOGIC ---
+
+        function toggleSuicideRiskSection() {
+            if (ui.concern.value.endsWith(' - Suicidal thoughts')) {
+                ui.suicideRiskSection.style.display = 'block';
+                ui.suicideStage.required = true;
+            } else {
+                ui.suicideRiskSection.style.display = 'none';
+                ui.suicideStage.required = false;
+                ui.suicideStage.value = '';
+            }
         }
         
         // --- LOGIN AND DRIVER MANAGEMENT ---
@@ -1245,6 +1246,19 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const pageEl = document.getElementById(pageId);
+            const btnEl = document.getElementById(`${pageId}Btn`);
+            if (pageEl) pageEl.classList.add('active');
+            if (btnEl) btnEl.classList.add('active');
+            
+            if (pageId === 'dashboard') {
+                updateDashboard();
+            }
         }
 
         function exportToSheets() {
