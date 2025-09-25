@@ -892,7 +892,6 @@
             driverDetails = JSON.parse(localStorage.getItem('driverDetails') || 'null');
         }
         
-        // FIXED: Added safety checks to prevent crash on page load
         async function initializeDriverSetup() {
             const setupOverlay = document.getElementById('driverSetupOverlay');
             const mainApp = document.getElementById('mainAppContainer');
@@ -907,7 +906,7 @@
             if (driverDetails && driverDetails.name) {
                 setupOverlay.style.display = 'none';
                 mainApp.style.visibility = 'visible';
-                driverInfoDisplay.style.display = 'block'; // Use 'block' for better consistency
+                driverInfoDisplay.style.display = 'block'; 
                 driverNameEl.textContent = driverDetails.name;
                 await loadAndDisplayData();
             } else {
