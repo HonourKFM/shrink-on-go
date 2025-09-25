@@ -386,6 +386,40 @@
         .suicide-watch-card .data-table thead {
             background: var(--warning-dark);
         }
+
+        /* NEW: Recent Entries styles */
+        .entry-list {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .entry-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--grey-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+        .entry-item:last-child {
+            border-bottom: none;
+        }
+        .entry-item:hover {
+            background: var(--grey-light);
+        }
+        .entry-time {
+            color: var(--grey);
+            font-size: 14px;
+        }
+        .entry-badge {
+            background: var(--burgundy);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
     </style>
 </head>
 <body>
@@ -690,6 +724,15 @@
                     </button>
                 </form>
             </div>
+            
+            <!-- NEW: Recent Entries Section -->
+            <div class="form-card">
+                <h3 class="form-title">Your Recent Entries</h3>
+                <div class="entry-list" id="entryList">
+                    <!-- Entries will be dynamically inserted here -->
+                </div>
+            </div>
+
         </div>
 
         <div id="dashboard" class="page">
@@ -773,7 +816,7 @@
     </div>
 
     <script>
-        const APP_VERSION = '1.9.1-google-sheets-live';
+        const APP_VERSION = '1.9.2-final-features';
         console.log('Shrink on the Go - Version', APP_VERSION);
 
         // --- CONFIGURATION ---
@@ -802,8 +845,8 @@
             window.addEventListener('online', handleOnline);
             window.addEventListener('offline', handleOffline);
             updateSyncStatus();
-            loadAndDisplayData(); // Initial load
-            syncOfflineQueue(); // Sync any pending data
+            loadAndDisplayData();
+            syncOfflineQueue();
         }
 
         function collectUIElements() {
@@ -814,7 +857,7 @@
                 'totalCount', 'weekCount', 'clientForm', 'concern', 'suicideRiskSection', 'suicideStage',
                 'area', 'gender', 'age', 'employment', 'marital', 'suicideWatchSection',
                 'suicideWatchTableBody', 'dashTotalClients', 'dashAvgAge', 'dashTopArea', 'concernChart',
-                'areaChart', 'dataTableBody', 'successMessage'
+                'areaChart', 'dataTableBody', 'successMessage', 'entryList' // Added entryList
             ];
             for (const id of elementIds) {
                 ui[id] = document.getElementById(id);
@@ -885,7 +928,7 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Important for Apps Script Web Apps
+                    mode: 'no-cors',
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(offlineQueue),
@@ -996,6 +1039,7 @@
                 console.log(`Loaded ${clientData.length} records from Google Sheets.`);
                 updateDriverStats();
                 updateDashboard(); 
+                updateEntryList(); // <-- ADDED THIS CALL
             } catch (error) {
                 console.error('Error loading data from Google Sheets:', error);
                 alert('Could not load data from the cloud.');
@@ -1003,6 +1047,38 @@
                 updateSyncStatus();
             }
         }
+        
+        function updateEntryList() {
+            // FIXED: Add a guard clause to prevent crash if driver is not set up yet
+            if (!driverDetails || !driverDetails.name) {
+                ui.entryList.innerHTML = '<div class="entry-item"><div class="entry-time">Please set up driver details to see recent entries.</div></div>';
+                return;
+            }
+
+            const recent = clientData.filter(c => c.driver === driverDetails.name).slice(0, 5);
+            
+            if (recent.length === 0) {
+                ui.entryList.innerHTML = '<div class="entry-item"><div class="entry-time">No recent entries submitted from this device.</div></div>';
+                return;
+            }
+            
+            ui.entryList.innerHTML = recent.map(entry => {
+                const date = new Date(entry.timestamp);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                
+                return `
+                    <div class="entry-item">
+                        <div>
+                            <div style="font-weight: 500;">Entry #${entry.client_id}</div>
+                            <div class="entry-time">${dateStr} at ${timeStr}</div>
+                        </div>
+                        <div class="entry-badge">Synced</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
 
         function updateDriverStats() {
             ui.totalCount.textContent = clientData.length;
