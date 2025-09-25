@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shrink on the Go - Fynex Family Support Services</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -395,7 +394,7 @@
         <div class="form-card" style="border-left: 5px solid var(--burgundy);">
             <div class="form-header">
                 <h2 class="form-title">Configuration Needed</h2>
-                <p class="form-subtitle">Please add your Supabase URL and Key to the <code>index.html</code> file to connect to the cloud database.</p>
+                <p class="form-subtitle">Please paste your Google Apps Script URL into the <code>index.html</code> file to connect to the cloud database.</p>
             </div>
         </div>
     </div>
@@ -774,49 +773,37 @@
     </div>
 
     <script>
-        const APP_VERSION = '1.8.0-robust-init';
+        const APP_VERSION = '1.9.1-google-sheets-live';
         console.log('Shrink on the Go - Version', APP_VERSION);
 
-        // --- SUPABASE & GLOBAL VARS ---
-        const { createClient } = supabase;
-        const SUPABASE_URL = 'https://ntowgzfadqzzhplzikif.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50b3dnemZhZHF6emhwbHppa2lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NjAzODEsImV4cCI6MjA3NDMzNjM4MX0.zBhSeC-i1RatgmIheq5BquUoINJ9X4SSkbTzF_-oOnU';
+        // --- CONFIGURATION ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzscNsg66_6wChpJEZduhTQGclHyOBgwbNyEZsYRLbSSCDAPwSKNmxpdVoYaHEm6FLv/exec'; 
         
-        let db;
+        // --- GLOBAL VARS ---
         let clientData = [];
         let driverDetails = null;
-
-        // This object will hold all our HTML element references
         const ui = {};
 
         // --- ROBUST APP INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', main);
 
         function main() {
-            console.log('DOM fully loaded. Initializing application...');
-
-            // 1. Get all essential UI elements first.
             if (!collectUIElements()) {
-                console.error("CRITICAL ERROR: A required UI element is missing from the HTML. App cannot start.");
-                alert("A critical error occurred. Please reload the page or contact support.");
+                console.error("CRITICAL ERROR: A required UI element is missing. App cannot start.");
                 return;
             }
-
-            // 2. Initialize Supabase client.
-            if (!initializeSupabase()) return; // Halts if keys are missing
-
-            // 3. Attach all event listeners to the collected elements.
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || !SCRIPT_URL) {
+                ui.credentialsErrorOverlay.style.display = 'flex';
+                return;
+            }
             attachEventListeners();
-
-            // 4. Start the application logic.
             loadDriverDetails();
-            initializeDriverSetup(); // This is now safe to call.
-            
-            // 5. Set up network listeners and initial sync.
+            initializeDriverSetup();
             window.addEventListener('online', handleOnline);
             window.addEventListener('offline', handleOffline);
             updateSyncStatus();
-            syncOfflineQueue();
+            loadAndDisplayData(); // Initial load
+            syncOfflineQueue(); // Sync any pending data
         }
 
         function collectUIElements() {
@@ -829,25 +816,13 @@
                 'suicideWatchTableBody', 'dashTotalClients', 'dashAvgAge', 'dashTopArea', 'concernChart',
                 'areaChart', 'dataTableBody', 'successMessage'
             ];
-            
             for (const id of elementIds) {
                 ui[id] = document.getElementById(id);
                 if (!ui[id]) {
                     console.error(`UI Element with ID '${id}' not found.`);
-                    return false; // Return false if any element is missing
+                    return false;
                 }
             }
-            return true; // All elements found
-        }
-        
-        function initializeSupabase() {
-             if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_KEY === 'YOUR_SUPABASE_KEY' || !SUPABASE_URL || !SUPABASE_KEY) {
-                console.error('Supabase credentials are not set.');
-                ui.credentialsErrorOverlay.style.display = 'flex';
-                return false;
-            }
-            db = createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('Supabase client initialized.');
             return true;
         }
 
@@ -856,18 +831,17 @@
             ui.changeDriverBtn.addEventListener('click', changeDriver);
             ui.concern.addEventListener('change', toggleSuicideRiskSection);
             ui.clientForm.addEventListener('submit', handleFormSubmit);
-            // The nav buttons are handled by onclick, but we can add them here for consistency if needed
         }
 
         function handleOnline() {
             updateSyncStatus();
             syncOfflineQueue();
         }
-        
+
         function handleOffline() {
             updateSyncStatus();
         }
-
+        
         // --- CORE APP LOGIC ---
 
         function toggleSuicideRiskSection() {
@@ -888,10 +862,10 @@
             if (navigator.onLine) {
                 if (offlineQueue.length > 0) {
                     ui.syncStatus.classList.add('syncing');
-                    ui.syncText.textContent = `Syncing ${offlineQueue.length} entries...`;
+                    ui.syncText.textContent = `Syncing ${offlineQueue.length}...`;
                 } else {
                     ui.syncStatus.classList.add('online');
-                    ui.syncText.textContent = 'Online & Synced';
+                    ui.syncText.textContent = 'Online';
                 }
             } else {
                 ui.syncStatus.classList.add('offline');
@@ -900,8 +874,7 @@
         }
 
         async function syncOfflineQueue() {
-            if (!navigator.onLine || !db) return;
-
+            if (!navigator.onLine) return;
             const offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
             if (offlineQueue.length === 0) {
                 updateSyncStatus();
@@ -909,31 +882,28 @@
             }
             
             updateSyncStatus();
-
             try {
-                const { count, error: countError } = await db.from('client_data').select('*', { count: 'exact', head: true });
-                if(countError) throw countError;
-                
-                const itemsToSync = offlineQueue.map((item, index) => ({
-                    ...item,
-                    client_id: String(count + 1 + index).padStart(4, '0')
-                }));
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for Apps Script Web Apps
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(offlineQueue),
+                    redirect: 'follow'
+                });
 
-                const { error } = await db.from('client_data').insert(itemsToSync);
-                if (error) throw error;
-
-                console.log(`Successfully synced ${itemsToSync.length} offline entries.`);
+                console.log(`Successfully sent ${offlineQueue.length} offline entries to script.`);
                 localStorage.setItem('offlineQueue', '[]');
                 await loadAndDisplayData();
             
             } catch (error) {
                 console.error('Sync failed:', error);
-                alert('An error occurred while syncing offline data. Please check your connection.');
+                alert('An error occurred while syncing offline data.');
             } finally {
                 updateSyncStatus();
             }
         }
-
+        
         function loadDriverDetails() {
             driverDetails = JSON.parse(localStorage.getItem('driverDetails') || 'null');
         }
@@ -944,7 +914,6 @@
                 ui.mainAppContainer.style.visibility = 'visible';
                 ui.driverInfo.style.display = 'block'; 
                 ui.driverNameDisplay.textContent = driverDetails.name;
-                await loadAndDisplayData();
             } else {
                 ui.driverSetupOverlay.style.display = 'flex';
                 ui.mainAppContainer.style.visibility = 'hidden';
@@ -1017,17 +986,21 @@
         }
 
         async function loadAndDisplayData() {
-            if (!db) return;
-             try {
-                const { data, error } = await db.from('client_data').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
-                clientData = data;
-                console.log(`Loaded ${clientData.length} records from Supabase.`);
+            try {
+                ui.syncStatus.classList.add('syncing');
+                ui.syncText.textContent = 'Fetching Data...';
+                const response = await fetch(SCRIPT_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                clientData = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                console.log(`Loaded ${clientData.length} records from Google Sheets.`);
                 updateDriverStats();
                 updateDashboard(); 
             } catch (error) {
-                console.error('Error loading data from Supabase:', error);
+                console.error('Error loading data from Google Sheets:', error);
                 alert('Could not load data from the cloud.');
+            } finally {
+                updateSyncStatus();
             }
         }
 
@@ -1046,7 +1019,6 @@
 
         function updateDashboard() {
             updateSuicideWatchList();
-
             if (clientData.length === 0) {
                 ui.dashTotalClients.textContent = '0';
                 ui.dashAvgAge.textContent = '0';
@@ -1057,7 +1029,7 @@
                 return;
             }
             
-            const totalAge = clientData.reduce((sum, c) => sum + (c.age || 0), 0);
+            const totalAge = clientData.reduce((sum, c) => sum + Number(c.age || 0), 0);
             const avgAge = clientData.length > 0 ? Math.round(totalAge / clientData.length) : 0;
             const areaCounts = clientData.reduce((acc, c) => {
                 acc[c.area] = (acc[c.area] || 0) + 1;
@@ -1099,7 +1071,6 @@
             if (concernChartInstance) concernChartInstance.destroy();
             const concernCounts = clientData.reduce((acc, c) => {
                 let mainCategory = (c.concern || 'Other').split(' - ')[0];
-                if (mainCategory === 'Depression') mainCategory = 'Depression & Mood';
                 if (mainCategory) acc[mainCategory] = (acc[mainCategory] || 0) + 1;
                 return acc;
             }, {});
