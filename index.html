@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shrink on the Go - Fynex Family Support Services</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8B2635">
     <style>
         * {
             margin: 0;
@@ -814,7 +817,7 @@
         </div>
 
         <div id="dashboard" class="page">
-            <details id="suicideWatchSection" class="form-card suicide-watch-card" style="display: none;">
+             <details id="suicideWatchSection" class="form-card suicide-watch-card" style="display: none;">
                 <summary class="watchlist-summary">
                     <span>Suicide Risk Watchlist</span>
                     <span id="watchlistCount" class="watchlist-count">0</span>
@@ -899,7 +902,7 @@
     </div>
 
     <script>
-        const APP_VERSION = '2.1.0-final-fixes';
+        const APP_VERSION = '2.1.1-final-fixes';
         console.log('Shrink on the Go - Version', APP_VERSION);
 
         // --- CONFIGURATION ---
@@ -1226,7 +1229,9 @@
 
         function updateDriverStats() {
             if (!driverDetails || !driverDetails.name) return;
+
             const driverSpecificData = allClientData.filter(e => e.driver === driverDetails.name);
+
             ui.totalCount.textContent = driverSpecificData.length;
             const now = new Date();
             const todayEntries = driverSpecificData.filter(e => new Date(e.timestamp).toDateString() === now.toDateString()).length;
@@ -1241,7 +1246,9 @@
 
         function updateDashboard() {
             updateSuicideWatchList();
+            // Dashboard stats always use ALL data
             ui.dashTotalClients.textContent = allClientData.length;
+
             if (allClientData.length === 0) {
                 ui.dashAvgAge.textContent = '0';
                 ui.dashTopArea.textContent = 'No data';
@@ -1254,8 +1261,10 @@
             const avgAge = allClientData.length > 0 ? Math.round(totalAge / allClientData.length) : 0;
             const areaCounts = allClientData.reduce((acc, c) => { acc[c.area] = (acc[c.area] || 0) + 1; return acc; }, {});
             const topArea = Object.keys(areaCounts).length > 0 ? Object.entries(areaCounts).sort((a,b) => b[1]-a[1])[0][0] : 'N/A';
+            
             ui.dashAvgAge.textContent = avgAge;
             ui.dashTopArea.textContent = topArea;
+            
             updateConcernChart();
             updateAreaChart();
             updateDataTable();
@@ -1264,6 +1273,7 @@
         function updateSuicideWatchList() {
             const watchList = allClientData.filter(c => c.suicideStage);
             ui.watchlistCount.textContent = watchList.length;
+
             if (watchList.length === 0) {
                 ui.suicideWatchSection.style.display = 'none';
                 return;
