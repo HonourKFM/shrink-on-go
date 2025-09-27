@@ -8,6 +8,13 @@
     <!-- PWA Manifest Link -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#8B2635">
+    <!-- Add these PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Shrink on the Go">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
     <style>
         * {
             margin: 0;
@@ -947,17 +954,22 @@
         document.addEventListener('DOMContentLoaded', main);
 
         function main() {
-            if (!collectUIElements()) return;
-            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || !SCRIPT_URL) {
-                ui.credentialsErrorOverlay.style.display = 'flex';
-                return;
+            try {
+                if (!collectUIElements()) return;
+                if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_GOOGLE_APPS_SCRIPT_URL_HERE')) {
+                    ui.credentialsErrorOverlay.style.display = 'flex';
+                    return;
+                }
+                attachEventListeners();
+                loadDriverDetailsFromStorage();
+                initializeDriverSetup();
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+                updateSyncStatus();
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                alert("App failed to load: " + error.message);
             }
-            attachEventListeners();
-            loadDriverDetailsFromStorage();
-            initializeDriverSetup();
-            window.addEventListener('online', handleOnline);
-            window.addEventListener('offline', handleOffline);
-            updateSyncStatus();
         }
 
         function collectUIElements() {
